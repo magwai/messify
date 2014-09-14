@@ -13,7 +13,7 @@ $messify = new messify(array(
 ));
 try {
 	// Пример получения токена
-	$token = $messify->fetch_token();
+	$token = $messify->token();
 
 	// Устанавливаем токен для messify
 	$messify->set_token($token['token']);
@@ -22,7 +22,7 @@ try {
 	$messify->set_token_secret($token['token_secret']);
 
 	// Расширенное инфо
-	$result = $messify->check_token(array(
+	$result = $messify->token(array(
 		'info' => 1
 	));
 	var_dump($result);
@@ -141,7 +141,7 @@ class messify {
 				'token_secret' => $this->_token_secret,
 				'host' => $this->_host
 			), $post);
-			$result = file_get_contents('http://'.$this->_service_host.'/api/'.$endpoint, false, stream_context_create(array(
+			$result = file_get_contents('https://'.$this->_service_host.'/api/'.$endpoint, false, stream_context_create(array(
 				'http' => array(
 					'method' =>	'POST',
 					'user_agent' => 'messify-1.0',
