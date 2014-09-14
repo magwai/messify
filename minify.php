@@ -16,10 +16,15 @@ try {
 	$token = $minify->fetch_token();
 
 	// Устанавливаем токен для minify
-	$minify->set_token($token);
+	$minify->set_token($token['token']);
 
-	// Проверяем валидность токена
-	$result = $minify->check_token($token);
+	// Устанавливаем секрет токен для minify
+	$minify->set_token_secret($token['token_secret']);
+
+	// Расширенное инфо
+	$result = $minify->check_token(array(
+		'info' => 1
+	));
 	var_dump($result);
 
 	// Сжатие CSS
@@ -37,10 +42,15 @@ catch (Exception $e) {
 */
 
 class minify {
-	private $_service_host = 'util.magwai.ru';
+	private $_service_host = 'messify.ru';
 	private $_token = null;
+	private $_token_secret = null;
+	private $_host = null;
 
 	public function __construct($options = array()) {
+		if (isset($_SERVER['HTTP_HOST']) && $_SERVER['HTTP_HOST']) {
+			$this->set_host($_SERVER['HTTP_HOST']);
+		}
 		if (!$options) {
 			return;
 		}
@@ -51,21 +61,30 @@ class minify {
 					$this->$method($value);
 				}
 				else {
-					$this->_error(2, 'Option "'.$key.'" does not exists');
+					$this->_error(30, 'Option "'.$key.'" does not exists');
 				}
 			}
 		}
 		else {
-			$this->_error(1, 'Options should be Array');
+			$this->_error(31, 'Options should be Array');
 		}
 	}
 
-	public function service_host($host) {
+	public function set_service_host($host) {
 		if ($host) {
 			$this->_service_host = $host;
 		}
 		else {
-			$this->_error(3, 'Service host can not be empty');
+			$this->_error(32, 'Service host can not be empty');
+		}
+	}
+
+	public function set_host($host) {
+		if ($host) {
+			$this->_host = $host;
+		}
+		else {
+			$this->_error(33, 'Host can not be empty');
 		}
 	}
 
@@ -74,29 +93,34 @@ class minify {
 			$this->_token = $token;
 		}
 		else {
-			$this->_error(4, 'Token can not be empty');
+			$this->_error(34, 'Token can not be empty');
 		}
 	}
 
-	public function check_token($token = null) {
-		return $this->_request('check', array(
-			'token' => $token === null ? $this->_token : $token,
-		));
+	public function set_token_secret($token_secret) {
+		if ($token_secret) {
+			$this->_token_secret = $token_secret;
+		}
+		else {
+			$this->_error(35, 'Token secret can not be empty');
+		}
 	}
 
-	public function fetch_token() {
-		return $this->_request('token');
+	public function token($param = array()) {
+		return $this->_request('token', $param);
 	}
 
 	public function compress($type, $compressors, $data) {
 		if (!$this->_token) {
-			$this->_error(5, 'Token is not set');
+			$this->_error(36, 'Token is not set');
+		}
+		if (!$this->_token_secret) {
+			$this->_error(37, 'Token secret is not set');
 		}
 		if (!$compressors || !is_array($compressors)) {
-			$this->_error(6, 'Compressors can not be empty');
+			$this->_error(38, 'Compressors can not be empty');
 		}
 		return $this->_request('compress', array(
-			'token' => $this->_token,
 			'type' => $type,
 			'compressors' => $compressors,
 			'data' => $data
@@ -108,15 +132,19 @@ class minify {
 	}
 
 	private function _request($endpoint, $post = array()) {
+		if (!$this->_host) {
+			$this->_error(39, 'Can not determine host');
+		}
 		try {
-			$host = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : '';
+			$post = array_merge(array(
+				'token' => $this->_token,
+				'token_secret' => $this->_token_secret,
+				'host' => $this->_host
+			), $post);
 			$result = file_get_contents('http://'.$this->_service_host.'/minify/'.$endpoint, false, stream_context_create(array(
 				'http' => array(
 					'method' =>	'POST',
 					'user_agent' => 'minify',
-					'header' => $host ? array(
-						"Referer: ".$host
-					) : array(),
 					'content' => http_build_query($post),
 				)
 			)));
@@ -128,7 +156,7 @@ class minify {
 		$message = 'HTTP error';
 		$result_encoded = $this->_result_encode($result);
 		if (!$result_encoded) {
-			$this->_error(7, "No result available. Returned:\n\n".$result);
+			$this->_error(40, "No result available. Returned:\n\n".$result);
 		}
 		if (isset($result_encoded['error'])) {
 			$code = $result_encoded['error']['code'];
