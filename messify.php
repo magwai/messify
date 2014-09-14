@@ -1,6 +1,6 @@
 <?php
 /**
- * minify
+ * messify
  *
  * Copyright (c) 2012 Magwai Ltd. <info@magwai.ru>, http://magwai.ru
  * Licensed under the MIT License:
@@ -8,31 +8,31 @@
 
 USAGE:
 
-$minify = new minify(array(
+$messify = new messify(array(
 	'token' => 'ключ_токена'
 ));
 try {
 	// Пример получения токена
-	$token = $minify->fetch_token();
+	$token = $messify->fetch_token();
 
-	// Устанавливаем токен для minify
-	$minify->set_token($token['token']);
+	// Устанавливаем токен для messify
+	$messify->set_token($token['token']);
 
-	// Устанавливаем секрет токен для minify
-	$minify->set_token_secret($token['token_secret']);
+	// Устанавливаем секрет токен для messify
+	$messify->set_token_secret($token['token_secret']);
 
 	// Расширенное инфо
-	$result = $minify->check_token(array(
+	$result = $messify->check_token(array(
 		'info' => 1
 	));
 	var_dump($result);
 
 	// Сжатие CSS
-	$css = $minify->compress('css', array('yui', 'cssmin'), '.test_class{ border:1px solid red; }');
+	$css = $messify->compress('css', array('yui', 'cssmin'), '.test_class{ border:1px solid red; }');
 	var_dump($css);
 
 	// Сжатие JavaScript
-	$js = $minify->compress('js', array('gcc', 'yui', 'jsmin'), 'function test($str) { alert($str); }');
+	$js = $messify->compress('js', array('gcc', 'yui', 'jsmin'), 'function test($str) { alert($str); }');
 	var_dump($js);
 }
 catch (Exception $e) {
@@ -41,7 +41,7 @@ catch (Exception $e) {
 
 */
 
-class minify {
+class messify {
 	private $_service_host = 'messify.ru';
 	private $_token = null;
 	private $_token_secret = null;
@@ -141,10 +141,10 @@ class minify {
 				'token_secret' => $this->_token_secret,
 				'host' => $this->_host
 			), $post);
-			$result = file_get_contents('http://'.$this->_service_host.'/minify/'.$endpoint, false, stream_context_create(array(
+			$result = file_get_contents('http://'.$this->_service_host.'/api/'.$endpoint, false, stream_context_create(array(
 				'http' => array(
 					'method' =>	'POST',
-					'user_agent' => 'minify',
+					'user_agent' => 'messify-1.0',
 					'content' => http_build_query($post),
 				)
 			)));
