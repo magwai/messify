@@ -44,13 +44,15 @@ catch (Exception $e) {
 class messify {
 	private $_service_host = 'messify.ru';
 	private $_token = null;
+	private $_cache_dir = null;
+	private $_cache_url = null;
 	private $_token_secret = null;
-	private $_host = null;
 
 	public function __construct($options = array()) {
-		if (isset($_SERVER['HTTP_HOST']) && $_SERVER['HTTP_HOST']) {
-			$this->set_host($_SERVER['HTTP_HOST']);
-		}
+		$this->set($options);
+	}
+
+	public function set($options) {
 		if (!$options) {
 			return;
 		}
@@ -70,21 +72,24 @@ class messify {
 		}
 	}
 
-	public function set_service_host($host) {
-		if ($host) {
-			$this->_service_host = $host;
+	public function set_cache_dir($cache_dir) {
+		if ($cache_dir) {
+			if (!file_exists($cache_dir) || !is_writable($cache_dir)) {
+				$this->_error(42, 'Cache dir should exist and be writable');
+			}
+			$this->_cache_dir = $cache_dir;
 		}
 		else {
-			$this->_error(32, 'Service host can not be empty');
+			$this->_error(41, 'Cache dir not set');
 		}
 	}
 
-	public function set_host($host) {
-		if ($host) {
-			$this->_host = $host;
+	public function set_cache_url($cache_url) {
+		if ($cache_url) {
+			$this->_cache_url = $cache_url;
 		}
 		else {
-			$this->_error(33, 'Host can not be empty');
+			$this->_error(43, 'Cache url not set');
 		}
 	}
 
@@ -127,23 +132,27 @@ class messify {
 		));
 	}
 
+	public function messify($type, $compressors, $files) {
+		if (!$files || !is_array($files)) {
+			$this->_error(44, 'Files can not be empty');
+		}
+	}
+
 	private function _error($code, $message = '') {
 		throw new Exception($message, $code);
 	}
 
 	private function _request($endpoint, $post = array()) {
-		if (!$this->_host) {
-			$this->_error(39, 'Can not determine host');
-		}
 		try {
 			$post = array_merge(array(
 				'token' => $this->_token,
 				'token_secret' => $this->_token_secret,
-				'host' => $this->_host
+				'host' => @$_SERVER['HTTP_HOST']
 			), $post);
 			$result = file_get_contents('https://'.$this->_service_host.'/api/'.$endpoint, false, stream_context_create(array(
 				'http' => array(
 					'method' =>	'POST',
+					'header' => 'Content-Type: multipart/form-data',
 					'user_agent' => 'messify-1.0',
 					'content' => http_build_query($post),
 				)
