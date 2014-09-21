@@ -2,8 +2,11 @@ Messify
 =========
 
 Messify is PHP class for communicating with messify.ru service API. It helps organize caching optimized with messify.ru scripts and stores CSS and JavaScript file collection in you webapp or website.
+
 It is useful if you website has too much CSS and JavaScript files on every page and you want to reduce amount of external files includes and compress all or some of them.
+
 Compressing CSS is available with YUI compiler, CssMin
+
 Compressing JavaScript is available with GCC Google Closure Compiler (PRO only), YUI compiler, JsMin
 
 Basic usage
@@ -62,11 +65,11 @@ Result example
 <html>
   <head>
     <meta charset="utf-8">
-    <link href="/messify/css/eb35468ea8ed00578dce9d2e5530094e.css" media="all" rel="stylesheet" type="text/css" />
+    <link href="/messify/css/eb354.css" media="all" rel="stylesheet" type="text/css">
   </head>
   <body>
     <div id="jquery_test">Hello World</div>
-	<script type="text/javascript" src="/messify/js/18431bdd1ab64f343121cc9472604a55.js"></script>
+	<script type="text/javascript" src="/messify/js/1843.js"></script>
   </body>
 </html>
 ```
