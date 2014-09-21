@@ -2,38 +2,36 @@
 /**
  * messify
  *
- * Copyright (c) 2012 Magwai Ltd. <info@magwai.ru>, http://magwai.ru
+ * Copyright (c) 2014 Magwai Ltd. <info@magwai.ru>, http://magwai.ru
  * Licensed under the MIT License:
  * http://www.opensource.org/licenses/mit-license.php
 
 USAGE:
 
-$messify = new messify(array(
-	'token' => 'ключ_токена'
-));
+include 'messify.php';
+$messify = new messify();
 try {
-	// Пример получения токена
+	// Getting token
 	$token = $messify->token();
 
-	// Устанавливаем токен для messify
-	$messify->set_token($token['token']);
+	// Adding CSS and JavaScript files
+	$messify
+		->add('js', 'http://code.jquery.com/jquery-latest.js')
+		->add('js', 'alert("Hello World");', array(
+			'inline' => true,
+			'render_inline' => false
+		))
+		->add('css', 'http://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.css')
+		->add('css', 'body{background:#cccccc;}', array(
+			'inline' => true,
+			'render_inline' => false
+		));
 
-	// Устанавливаем секрет токен для messify
-	$messify->set_token_secret($token['token_secret']);
+	// Output result for CSS
+	echo $messify->render('css');
 
-	// Расширенное инфо
-	$result = $messify->token(array(
-		'info' => 1
-	));
-	var_dump($result);
-
-	// Сжатие CSS
-	$css = $messify->compress('css', array('yui', 'cssmin'), '.test_class{ border:1px solid red; }');
-	var_dump($css);
-
-	// Сжатие JavaScript
-	$js = $messify->compress('js', array('gcc', 'yui', 'jsmin'), 'function test($str) { alert($str); }');
-	var_dump($js);
+	// Output result for JavaScript
+	echo $messify->render('js');
 }
 catch (Exception $e) {
 	var_dump($e);
