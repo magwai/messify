@@ -1,7 +1,7 @@
 Messify
 =========
 
-Messify is PHP class for communicating with messify.ru service API. It helps organize caching optimized with messify.ru scripts and stores CSS and JavaScript file collection in you webapp or website.
+[Messify] is PHP class for communicating with [messify.ru] service API. It helps organize caching optimized with [messify.ru] scripts and stores CSS and JavaScript file collection in you webapp or website.
 
 It is useful if you website has too much CSS and JavaScript files on every page and you want to reduce amount of external files includes and compress all or some of them.
 
@@ -73,7 +73,7 @@ Result example
   </body>
 </html>
 ```
-All files was compressed via messify.ru and then merged in one file. So, you have only one CSS and one JavaScript files in you web page, loaded from cache on your domain. Messify class dealing with conditional HTML rules for specific files. You can disable compressing and merging for specific files or disable remote files downloading.
+All files was compressed via [messify.ru] and then merged in one file. So, you have only one CSS and one JavaScript files in you web page, loaded from cache on your domain. [Messify] class dealing with conditional HTML rules for specific files. You can disable compressing and merging for specific files or disable remote files downloading.
 
 More info
 =========
@@ -87,6 +87,7 @@ Demo: [Working demo]
 [messify.ru/page/api]:https://messify.ru/page/api
 [Working demo]:https://github.com/magwai/messify/blob/master/demo.php
 [messify.ru]:https://messify.ru
+[Messify]:https://github.com/magwai/messify
 [YUI]:http://yui.github.io/yuicompressor
 [GCC]:https://github.com/google/closure-compiler
 [CssMin]:http://code.google.com/p/cssmin
