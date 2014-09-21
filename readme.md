@@ -5,9 +5,9 @@ Messify is PHP class for communicating with messify.ru service API. It helps org
 
 It is useful if you website has too much CSS and JavaScript files on every page and you want to reduce amount of external files includes and compress all or some of them.
 
-Compressing CSS is available with YUI compiler, CssMin
+Compressing CSS is available with [YUI] compiler, [CssMin].
 
-Compressing JavaScript is available with GCC Google Closure Compiler (PRO only), YUI compiler, JsMin
+Compressing JavaScript is available with [GCC] Google Closure Compiler (PRO only), [YUI] compiler, [JsMin].
 
 Basic usage
 =========
@@ -85,7 +85,7 @@ Demo: [Working demo]
 
 [messify.ru/page/doc]:https://messify.ru/page/doc
 [messify.ru/page/api]:https://messify.ru/page/api
-[Working demo] https://github.com/magwai/messify/blob/master/demo.php
+[Working demo]:https://github.com/magwai/messify/blob/master/demo.php
 [messify.ru]:https://messify.ru
 [YUI]:http://yui.github.io/yuicompressor
 [GCC]:https://github.com/google/closure-compiler
