@@ -1,8 +1,10 @@
 <?php
 
+// Include class and create instance
 include 'messify.php';
 $messify = new messify();
 
+// Add CSS and JavaScript files
 $messify
 	->add('js', 'http://code.jquery.com/jquery-latest.js')
 	->add('js', 'js/script.js')

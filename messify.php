@@ -8,13 +8,11 @@
 
 USAGE:
 
+// Include class and create instance
 include 'messify.php';
 $messify = new messify();
 try {
-	// Getting token
-	$token = $messify->token();
-
-	// Adding CSS and JavaScript files
+	// Add CSS and JavaScript files
 	$messify
 		->add('js', 'http://code.jquery.com/jquery-latest.js')
 		->add('js', 'alert("Hello World");', array(
@@ -47,7 +45,7 @@ class messify {
 	private $_cache_dir = 'messify';
 	private $_cache_dir_create = true;
 	private $_cache_dir_mode = 0777;
-	private $_remote_hash = '1';
+	private $_remote_hash = 'default';
 	private $_all_offset = -1;
 	private $_dirty = array(
 		'js' => true,
@@ -759,5 +757,123 @@ class messify {
 			}
 		}
 		return implode('', $ret);
+	}
+
+	private function _parse_for_condition($html, $place, &$replace, &$files) {
+		$found = preg_match_all('/\<\!\-\-.*?\[.*?if([^\]]*)\].*?\>(.*?)\<\!.*?\[.*?endif.*?\].*?\-\-\>/si', $html, $result);
+		if ($found) {
+			foreach ($result[2] as $k => $v) {
+				$this->_parse_for_js($v, $place, trim($result[1][$k]), $replace, $files);
+				$this->_parse_for_css($v, trim($result[1][$k]), $replace, $files);
+			}
+		}
+	}
+
+	private function _parse_for_js($html, $place, $condition, &$replace, &$files) {
+		$found_src = preg_match_all('/\<script.*?src.*?\=.*?(\"|\'|)(.*?)(\"|\'|\ |\>).*?\>(.*?)\<.*?\/.*?script.*?\>/si', $html, $result);
+		if ($found_src) {
+			foreach ($result[2] as $k => $v) {
+				$files[$condition === null ? 'all' : 'condition'][] = array('js', $v, array(
+					'condition' => $condition,
+					'place' => $place
+				));
+				$html = str_replace($result[0][$k], '', $html);
+				$replace[] = $result[0][$k];
+			}
+		}
+		$found_inline = preg_match_all('/\<script.*?\>(.*?)\<.*?\/.*?script.*?\>/si', $html, $result);
+		if ($found_inline) {
+			foreach ($result[1] as $k => $v) {
+				$files[$condition === null ? 'all' : 'condition'][] = array('js', $v, array(
+					'condition' => $condition,
+					'place' => $place,
+					'inline' => true
+				));
+				$html = str_replace($result[0][$k], '', $html);
+				$replace[] = $result[0][$k];
+			}
+		}
+	}
+
+	private function _parse_for_css($html, $condition, &$replace, &$files) {
+		$found_href = preg_match_all('/\<.*?link.*?rel.*?\=.*?(\"|\'|)stylesheet(\"|\'|\ |\>|\/).*?\>/si', $html, $result);
+		if ($found_href) {
+			foreach ($result[0] as $k => $v) {
+				$media = 'all';
+				$href = '';
+				$found_media = preg_match('/media.*?\=.*?(\"|\'|)(.*?)(\"|\'|\ |\>|\/)/si', $v, $result_media);
+				if ($found_media) $media = trim($result_media[2]);
+				$found_href = preg_match('/href.*?\=.*?(\"|\'|)(.*?)(\"|\'|\ |\>)/si', $v, $result_href);
+				if ($found_href) $href = trim($result_href[2]);
+				if (!$href) continue;
+				$files[$condition === null ? 'all' : 'condition'][] = array('css', $href, array(
+					'condition' => $condition,
+					'media' => $media
+				));
+				$html = str_replace($result[0][$k], '', $html);
+				$replace[] = $result[0][$k];
+			}
+		}
+		$found_inline = preg_match_all('/\<.*?style.*?\>(.*?)\<.*?\/.*?style.*?\>/si', $html, $result);
+		if ($found_inline) {
+			foreach ($result[1] as $k => $v) {
+				$files[$condition === null ? 'all' : 'condition'][] = array('css', $v, array(
+					'inline' => true,
+					'condition' => $condition,
+					'media' => 'all'
+				));
+				$html = str_replace($result[0][$k], '', $html);
+				$replace[] = $result[0][$k];
+			}
+		}
+	}
+
+
+	public function parse($html, $options = array()) {
+		$body = $html;
+		$head = '';
+		$found_head = preg_match_all('/\<head\>(.*?)\<\/head\>/si', $body, $result);
+		if ($found_head) {
+			foreach ($result[1] as $k => $v) {
+				$body = str_replace($result[0][$k], '', $body);
+				$head .= $v;
+			}
+		}
+
+		$files = array(
+			'all' => array(),
+			'condition' => array()
+		);
+		$replace = array();
+		$this->_parse_for_condition($head, 'head', $replace, $files);
+		$this->_parse_for_condition($body, 'body', $replace, $files);
+		$head = str_replace($replace, '', $head);
+		$body = str_replace($replace, '', $body);
+		$this->_parse_for_js($head, 'head', null, $replace, $files);
+		$this->_parse_for_js($body, 'body', null, $replace, $files);
+		$this->_parse_for_css($head, null, $replace, $files);
+		$this->_parse_for_css($body, null, $replace, $files);
+		$html = str_replace($replace, '', $html);
+
+		$replace = array();
+		$found_empty = preg_match_all('/\<\!\-\-.*?\[.*?if([^\]]*)\].*?\>[\ \n\t\;]*?\<\!.*?\[.*?endif.*?\].*?\-\-\>/si', $html, $result);
+		if ($found_empty) {
+			foreach ($result[0] as $v) {
+				$replace[] = $v;
+			}
+		}
+		$html = str_replace($replace, '', $html);
+		if ($files['all']) {
+			foreach ($files['all'] as $el) {
+				$el[2] = array_merge($el[2], $options);
+				call_user_func_array(array($this, 'add'), $el);
+			}
+		}
+		if ($files['condition']) {
+			foreach ($files['condition'] as $el) {
+				$el[2] = array_merge($el[2], $options);
+				call_user_func_array(array($this, 'add'), $el);
+			}
+		}
 	}
 }
