@@ -22,8 +22,8 @@ Include class and create instance
 --
 
 ```
-include 'messify.php';
-$messify = new messify();
+include 'Messify.php';
+$messify = new \Magwai\Messify\Messify;
 ```
 
 Add CSS and JavaScript files
