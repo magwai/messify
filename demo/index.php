@@ -1,16 +1,16 @@
 <?php
 
 // Include class and create instance
-include 'Messify.php';
+include '../Messify.php';
 $messify = new \Magwai\Messify\Messify;
 
 // Add CSS and JavaScript files
 $messify
 	->add('js', 'http://code.jquery.com/jquery-latest.js')
-	->add('js', 'js/script.js')
+	->add('js', '/demo/js/script.js')
 	->add('js', '$(function() { $("#jquery_test_inline").html("Hello world inline"); });', array('inline' => true))
 	->add('css', 'http://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.css')
-	->add('css', 'css/style.css')
+	->add('css', '/demo/css/style.css')
 	->add('css', 'body{color:#888888;}', array('inline' => true));
 
 ?>
