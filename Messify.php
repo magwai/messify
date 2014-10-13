@@ -44,6 +44,7 @@ include('vendor/cssmin/cssmin.php');
 include('vendor/jsmin/jsmin.php');
 
 class Messify {
+	private $_java_available = null;
 	private $_service_host = 'messify.ru';
 	private $_token = null;
 	private $_token_secret = null;
@@ -66,8 +67,12 @@ class Messify {
 		'css' => true
 	);
 	private $_compress = array(
-		'js' => true,
-		'css' => true
+		'js' => array(
+			'local' => true
+		),
+		'css' => array(
+			'local' => true
+		)
 	);
 	private $_files = array(
 		'js' => array(),
@@ -342,30 +347,44 @@ class Messify {
 	}
 
 	private function _preprocess_css($content, $file) {
-		if ($file && isset($file['file']) && $file['file']) {
-			if ($file['scss']) $content = $this->preprocess_scss($content, $file['file'], $file['scss']);
-			$dir = ltrim(dirname($file['file']), './');
-			$found = preg_match_all('/url\((\'|\"|)([^\)]*?)(\'|\"|)\)/si', $content, $match);
-			if ($found) {
-				$from = $to = array();
-				foreach ($match[2] as $k => $v) {
-					if (substr($v, 0, 1) == '/' || $this->_is_file_remote($v)) continue;
-					$from[] = $match[0][$k];
-					$to[] = 'url('.$match[1][$k].($dir ? '/'.$dir : '').'/'.$v.$match[3][$k].')';
-				}
-				if ($from) $content = str_replace($from, $to, $content);
-			}
-			$found = preg_match_all('/src\=(\'|\"|)([^\)]*?)(\'|\"|\,|\))/si', $content, $match);
-			if ($found) {
-				$from = $to = array();
-				foreach ($match[2] as $k => $v) {
-					if (substr($v, 0, 1) == '/' || $this->_is_file_remote($v)) continue;
-					$from[] = $match[0][$k];
-					$to[] = 'src='.$match[1][$k].($dir ? '/'.$dir : '').'/'.$v.$match[3][$k];
-				}
-				if ($from) $content = str_replace($from, $to, $content);
-			}
+		$p = $file;
+		unset($p['compress']);
+		unset($p['merge']);
+		unset($p['remote']);
+		unset($p['render_inline']);
+		unset($p['inline']);
+		$md5 = 'css_pre_'.md5($content.var_export($p, true));
+		if ($this->_cache_exists('css', $md5)) {
+			$content = $this->_cache_load('css', $md5);
 		}
+		else {
+			if ($file && isset($file['file']) && $file['file']) {
+				if ($file['scss']) $content = $this->preprocess_scss($content, $file['file'], $file['scss']);
+				$dir = ltrim(dirname($file['file']), './');
+				$found = preg_match_all('/url\((\'|\"|)([^\)]*?)(\'|\"|)\)/si', $content, $match);
+				if ($found) {
+					$from = $to = array();
+					foreach ($match[2] as $k => $v) {
+						if (substr($v, 0, 1) == '/' || $this->_is_file_remote($v)) continue;
+						$from[] = $match[0][$k];
+						$to[] = 'url('.$match[1][$k].($dir ? '/'.$dir : '').'/'.$v.$match[3][$k].')';
+					}
+					if ($from) $content = str_replace($from, $to, $content);
+				}
+				$found = preg_match_all('/src\=(\'|\"|)([^\)]*?)(\'|\"|\,|\))/si', $content, $match);
+				if ($found) {
+					$from = $to = array();
+					foreach ($match[2] as $k => $v) {
+						if (substr($v, 0, 1) == '/' || $this->_is_file_remote($v)) continue;
+						$from[] = $match[0][$k];
+						$to[] = 'src='.$match[1][$k].($dir ? '/'.$dir : '').'/'.$v.$match[3][$k];
+					}
+					if ($from) $content = str_replace($from, $to, $content);
+				}
+			}
+			$this->_cache_save('css', $md5, $content);
+		}
+
 		return $content;
 	}
 
@@ -386,7 +405,7 @@ class Messify {
 		$this->_preprocess_scss_image($images_dir, '', $images);
 
 		// zip scss file and all images
-		$zip = new \Magwai\Messify\Zip;
+		$zip = new Zip;
 		$zip->addFile($res, 'sass/style.scss');
 		if ($images) foreach ($images as $el) {
 			$zip->addFile($this->_read_file(ltrim($images_dir.'/', '/').$el), 'images/'.$el);
@@ -408,7 +427,7 @@ class Messify {
 			$dir = $this->_path_root.'/'.$this->_cache_dir.'/images/'.$opt['file'];
 			$this->_cache_save('images/'.$opt['file'], 'temp', $result['images'], 'zip');
 			try {
-				$zip = new \Magwai\Messify\Unzip;
+				$zip = new Unzip;
 				$zip->extract($dir.'/temp.zip', $dir);
 				unlink($dir.'/temp.zip');
 			}
@@ -777,16 +796,26 @@ class Messify {
 							$compress = $file['compress'] === null ? $this->_compress[$type_cur] : $file['compress'];
 							$merge = $file['merge'] === null ? $this->_merge[$type_cur] : $file['merge'];
 							$content = $file['content'];
-							$md5 = md5($content.$compress.(isset($file['scss']) ? var_export($file['scss'], 1) : ''));
+							$md5 = md5($content.($compress ? 1 : 0).(isset($file['scss']) ? var_export($file['scss'], 1) : ''));
 							if ($this->_cache_exists($type_cur, $md5)) {
 								$content = $this->_cache_load($type_cur, $md5);
 							}
 							else {
 								if ($type_cur == 'css') $content = $this->_preprocess_css($content, $file);
 								if ($compress) {
-									$result = $this->compress($type_cur, $content);
-									if ($result) {
-										$content = $result['content'];
+									$compressed_local = false;
+									if (isset($compress['local']) && $compress['local']) {
+										$result = $this->compress_local($type_cur, $content);
+										if ($result && $result['result']) {
+											$content = $result['content'];
+											$compressed_local = true;
+										}
+									}
+									if (!$compressed_local) {
+										$result = $this->compress($type_cur, $content);
+										if ($result) {
+											$content = $result['content'];
+										}
 									}
 								}
 								$this->_cache_save($type_cur, $md5, $content);
@@ -925,6 +954,18 @@ class Messify {
 			if (isset($ret['token_secret']) && !$this->_token_secret) $this->set_token_secret($ret['token_secret']);
 		}
 		return $ret;
+	}
+
+	public function compress_local($type, $data, $compressors = array()) {
+		if (!$compressors && isset($this->_compressors[$type])) $compressors = $this->_compressors[$type];
+		if (!$compressors || ($compressors != 'default' && !is_array($compressors))) {
+			$this->_error(38);
+		}
+
+		return array(
+			'result' => 0,
+			'content' => $data
+		);
 	}
 
 	public function compress($type, $data, $compressors = array()) {
