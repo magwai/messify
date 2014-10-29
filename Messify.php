@@ -31,7 +31,7 @@ try {
 	// Output result for JavaScript
 	echo $messify->render('js');
 }
-catch (Exception $e) {
+catch (\Exception $e) {
 	var_dump($e);
 }
 
@@ -143,7 +143,7 @@ class Messify {
 			}
 			return trim($res);
 		}
-		catch (Exception $ex) {
+		catch (\Exception $ex) {
 			$this->_error(33, $file);
 		}
 
@@ -431,7 +431,7 @@ class Messify {
 				$zip->extract($dir.'/temp.zip', $dir);
 				unlink($dir.'/temp.zip');
 			}
-			catch (Exception $ex) {}
+			catch (\Exception $ex) {}
 			$content = str_replace('__cache_dir__', '/'.$this->_cache_dir.'/images/'.$opt['file'], $content);
 		}
 		return $content;
@@ -455,7 +455,7 @@ class Messify {
 			}
 			closedir($handle);
 		}
-		catch (Exception $ex) { }
+		catch (\Exception $ex) { }
 	}
 
 	private function _preprocess_scss_content($content, $file, $ex = array()) {
@@ -550,7 +550,7 @@ class Messify {
 					try {
 						unlink($dir.'/'.$path);
 					}
-					catch (Exception $ex) { }
+					catch (\Exception $ex) { }
 				}
 				else if (is_dir($dir.'/'.$path)) {
 					$this->_cache_purge($type.'/'.$path);
@@ -558,7 +558,7 @@ class Messify {
 			}
 			closedir($handle);
 		}
-		catch (Exception $ex) { }
+		catch (\Exception $ex) { }
 	}
 
 	private function _error($code, $message = '') {
@@ -568,7 +568,7 @@ class Messify {
 			$message = call_user_func_array('sprintf', $args);
 		}
 		if (!$message) $message = 'Unknown error';
-		throw new Exception($message, $code);
+		throw new \Exception($message, $code);
 	}
 
 	private function _request($endpoint, $post = array()) {
@@ -587,7 +587,7 @@ class Messify {
 				)
 			)));
 		}
-		catch (Exception $e) {
+		catch (\Exception $e) {
 			$this->_error($e->getCode(), $e->getMessage());
 		}
 		$code = 8;
@@ -623,7 +623,7 @@ class Messify {
 				}
 			}
 		}
-		catch (Exception $e) {
+		catch (\Exception $e) {
 			$this->_error($e->getCode(), $e->getMessage());
 		}
 		return $result;
