@@ -222,7 +222,7 @@ class Messify {
 		}
 		else if ($offset === -1) {
 			$keys = array_keys($this->_files[$type][$param_1][$param_2]);
-			$min = min($keys);
+			$min = $keys ? min($keys) : 0;
 			$this->_files[$type][$param_1][$param_2][$min - 1] = $data;
 		}
 		else {
@@ -429,6 +429,7 @@ class Messify {
 			try {
 				$zip = new Unzip;
 				$zip->extract($dir.'/temp.zip', $dir);
+				$zip->close();
 				unlink($dir.'/temp.zip');
 			}
 			catch (\Exception $ex) {}
@@ -890,6 +891,12 @@ class Messify {
 			? 'condition'
 			: 'media', $file, $options);
 		return $this;
+	}
+
+	public function set_inline($type, $offset, $file, $options = array()) {
+		if (!$options || !is_array($options)) $options = array();
+		$options['inline'] = true;
+		return $this->set($type, $offset, $file, $options);
 	}
 
 	public function prepend_inline($type, $file, $options = array()) {
