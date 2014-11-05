@@ -577,7 +577,7 @@ class Messify {
 			$post = array_merge(array(
 				'token' => $this->_token,
 				'token_secret' => $this->_token_secret,
-				'host' => @$_SERVER['HTTP_HOST']
+				'host' => isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : ''
 			), $post);
 			$result = file_get_contents('https://'.$this->_service_host.'/api/'.$endpoint, false, stream_context_create(array(
 				'http' => array(
